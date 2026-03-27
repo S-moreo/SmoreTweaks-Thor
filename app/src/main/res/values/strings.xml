@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">S\'more Tweaks</string>
+    <string name="settings_summary">Controller tweaks, hotkeys, and more</string>
+    <string name="no_root">Root access required! Grant su permission.</string>
+    <string name="press_keys">Press key(s) on controller…</string>
+    <string name="pref_service_title">S\'more Tweaks Service</string>
+    <string name="pref_service_summary_on">Tweaks active</string>
+    <string name="pref_service_summary_off">Service disabled</string>
+    <string name="pref_category_bindings">Hotkey Bindings</string>
+    <string name="pref_add_binding">Add binding</string>
+    <string name="pref_long_press_threshold">Long-press duration</string>
+    <string name="pref_autostart">Start on boot</string>
+</resources>

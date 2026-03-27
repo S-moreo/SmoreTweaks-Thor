@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:key="service_enabled"
+        android:title="@string/pref_service_title"
+        android:summaryOn="@string/pref_service_summary_on"
+        android:summaryOff="@string/pref_service_summary_off"
+        android:defaultValue="false"
+        android:icon="@drawable/ic_notification" />
+
+    <SwitchPreference
+        android:key="autostart"
+        android:title="@string/pref_autostart"
+        android:summary="Automatically start service after reboot"
+        android:defaultValue="true"
+        android:dependency="service_enabled" />
+
+    <!-- Hotkey Bindings -->
+    <PreferenceCategory
+        android:key="category_bindings"
+        android:title="@string/pref_category_bindings">
+
+        <Preference
+            android:key="add_binding"
+            android:title="@string/pref_add_binding"
+            android:summary="Map controller keys to system actions"
+            android:icon="@android:drawable/ic_input_add" />
+
+        <ListPreference
+            android:key="long_press_ms"
+            android:title="@string/pref_long_press_threshold"
+            android:defaultValue="600"
+            android:entries="@array/long_press_entries"
+            android:entryValues="@array/long_press_values" />
+
+    </PreferenceCategory>
+
+    <!-- Module -->
+    <PreferenceCategory
+        android:key="category_module"
+        android:title="System Module">
+
+        <Preference
+            android:key="install_module"
+            android:title="Install / Update Module"
+            android:summary="Install as system app with GPU overclock" />
+
+        <Preference
+            android:key="uninstall_module"
+            android:title="Uninstall Module"
+            android:summary="Remove module (requires reboot)" />
+
+        <Preference
+            android:key="restore_vendor_boot"
+            android:title="Restore Stock vendor_boot"
+            android:summary="Restore from backup (reverses GPU OC DTB patch)" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
