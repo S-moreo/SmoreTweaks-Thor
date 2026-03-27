@@ -1,6 +1,7 @@
 package com.thor.hotkeys.service
 
 import android.util.Log
+import com.thor.hotkeys.util.DeviceConfig
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -13,10 +14,6 @@ class InputEventReader(
 ) {
     companion object {
         private const val TAG = "InputEventReader"
-        private val ALLOWED_DEVICES = setOf(
-            "/dev/input/event9",  // Odin Controller
-            "/dev/input/event0"   // gpio-keys (volume up, F24)
-        )
     }
 
     @Volatile
@@ -79,7 +76,7 @@ class InputEventReader(
         if (parts.size < 4) return
 
         val devicePath = parts[0].trimEnd(':')
-        if (devicePath !in ALLOWED_DEVICES) return
+        if (devicePath !in DeviceConfig.ALLOWED_DEVICES) return
 
         val eventType = parts[1]
         val codeName = parts[2]

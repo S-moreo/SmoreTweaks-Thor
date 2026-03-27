@@ -32,6 +32,7 @@ class HotkeyService : Service() {
     private lateinit var inputReader: InputEventReader
     private lateinit var detector: HotkeyDetector
     private lateinit var executor: ActionExecutor
+    private var overlay: SystemInfoOverlay? = null
     private var fgPoller: Thread? = null
     @Volatile
     private var fgPolling = false
@@ -76,6 +77,7 @@ class HotkeyService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        overlay?.hide()
         stopForegroundPoller()
         inputReader.stop()
         detector.reset()
@@ -105,6 +107,15 @@ class HotkeyService : Service() {
             startForegroundPoller()
         } else {
             stopForegroundPoller()
+        }
+
+        // System info overlay
+        val overlayEnabled = prefs.getBoolean("overlay_enabled", false)
+        if (overlayEnabled) {
+            if (overlay == null) overlay = SystemInfoOverlay(this)
+            if (!overlay!!.isShowing()) overlay!!.show()
+        } else {
+            overlay?.hide()
         }
     }
 

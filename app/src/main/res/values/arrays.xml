@@ -16,4 +16,18 @@
         <item>1000</item>
         <item>1500</item>
     </string-array>
+    <string-array name="overlay_interval_entries">
+        <item>100 ms (fastest)</item>
+        <item>250 ms</item>
+        <item>500 ms</item>
+        <item>1000 ms (stock)</item>
+        <item>2000 ms</item>
+    </string-array>
+    <string-array name="overlay_interval_values">
+        <item>100</item>
+        <item>250</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>2000</item>
+    </string-array>
 </resources>

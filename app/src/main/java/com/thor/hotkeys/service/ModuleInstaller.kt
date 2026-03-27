@@ -2,6 +2,7 @@ package com.thor.hotkeys.service
 
 import android.content.Context
 import android.util.Log
+import com.thor.hotkeys.util.RootShell
 import java.io.File
 import java.io.FileOutputStream
 
@@ -53,36 +54,36 @@ class ModuleInstaller(private val context: Context) {
             try {
                 // Backup vendor_boot (only on first install — never overwrite existing backup)
                 onProgress("Backing up vendor_boot...")
-                rootCmdStrict("mkdir -p $BACKUP_DIR")
-                val backupExists = rootCmdOutput("test -f $BACKUP_DIR/vendor_boot.img.bak && echo yes || echo no").trim()
+                RootShell.cmdStrict("mkdir -p $BACKUP_DIR")
+                val backupExists = RootShell.cmdOutput("test -f $BACKUP_DIR/vendor_boot.img.bak && echo yes || echo no").trim()
                 if (backupExists == "yes") {
                     Log.i(TAG, "Vendor_boot backup already exists, skipping")
                 } else {
-                    rootCmdStrict("dd if=$VENDOR_BOOT_PART of=$BACKUP_DIR/vendor_boot.img.bak")
+                    RootShell.cmdStrict("dd if=$VENDOR_BOOT_PART of=$BACKUP_DIR/vendor_boot.img.bak")
                     Log.i(TAG, "Vendor_boot backed up to $BACKUP_DIR/vendor_boot.img.bak")
                 }
 
                 // Purge old modules
                 onProgress("Removing old modules...")
                 for (oldId in OLD_MODULE_IDS) {
-                    rootCmd("rm -rf /data/adb/modules/$oldId")
+                    RootShell.cmd("rm -rf /data/adb/modules/$oldId")
                 }
 
                 onProgress("Creating module structure...")
                 val apkPath = context.applicationInfo.sourceDir
 
                 // Create full directory structure
-                rootCmd("rm -rf $MODULE_DIR")
-                rootCmd("mkdir -p $MODULE_DIR/system/bin")
-                rootCmd("mkdir -p $MODULE_DIR/system/priv-app/ThorHotkeys")
-                rootCmd("mkdir -p $MODULE_DIR/system/etc/permissions")
-                rootCmd("mkdir -p $MODULE_DIR/system/vendor/lib/modules")
-                rootCmd("mkdir -p $MODULE_DIR/system/vendor/firmware")
+                RootShell.cmd("rm -rf $MODULE_DIR")
+                RootShell.cmd("mkdir -p $MODULE_DIR/system/bin")
+                RootShell.cmd("mkdir -p $MODULE_DIR/system/priv-app/ThorHotkeys")
+                RootShell.cmd("mkdir -p $MODULE_DIR/system/etc/permissions")
+                RootShell.cmd("mkdir -p $MODULE_DIR/system/vendor/lib/modules")
+                RootShell.cmd("mkdir -p $MODULE_DIR/system/vendor/firmware")
 
                 // Copy APK
                 onProgress("Installing app as system priv-app...")
-                rootCmd("cp $apkPath $MODULE_DIR/system/priv-app/ThorHotkeys/ThorHotkeys.apk")
-                rootCmd("chmod 644 $MODULE_DIR/system/priv-app/ThorHotkeys/ThorHotkeys.apk")
+                RootShell.cmd("cp $apkPath $MODULE_DIR/system/priv-app/ThorHotkeys/ThorHotkeys.apk")
+                RootShell.cmd("chmod 644 $MODULE_DIR/system/priv-app/ThorHotkeys/ThorHotkeys.apk")
 
                 // Extract all assets to temp
                 val tmpDir = File(context.cacheDir, "module_tmp")
@@ -92,22 +93,22 @@ class ModuleInstaller(private val context: Context) {
                 // pservice binary
                 onProgress("Installing GPU overclock (pservice)...")
                 extractAsset("module/system/bin/pservice", File(tmpDir, "pservice"))
-                rootCmd("cp ${tmpDir}/pservice $MODULE_DIR/system/bin/pservice")
-                rootCmd("chmod 755 $MODULE_DIR/system/bin/pservice")
+                RootShell.cmd("cp ${tmpDir}/pservice $MODULE_DIR/system/bin/pservice")
+                RootShell.cmd("chmod 755 $MODULE_DIR/system/bin/pservice")
 
                 // Kernel modules
                 onProgress("Installing GPU kernel modules...")
                 for (ko in listOf("gpucc-kalama.ko", "msm_lmh_dcvs.ko", "gpio5_pwm.ko")) {
                     extractAsset("module/system/vendor/lib/modules/$ko", File(tmpDir, ko))
-                    rootCmd("cp ${tmpDir}/$ko $MODULE_DIR/system/vendor/lib/modules/$ko")
-                    rootCmd("chmod 644 $MODULE_DIR/system/vendor/lib/modules/$ko")
+                    RootShell.cmd("cp ${tmpDir}/$ko $MODULE_DIR/system/vendor/lib/modules/$ko")
+                    RootShell.cmd("chmod 644 $MODULE_DIR/system/vendor/lib/modules/$ko")
                 }
 
                 // GPU firmware
                 onProgress("Installing GPU firmware...")
                 extractAsset("module/system/vendor/firmware/gmu_gen70200.bin", File(tmpDir, "gmu_gen70200.bin"))
-                rootCmd("cp ${tmpDir}/gmu_gen70200.bin $MODULE_DIR/system/vendor/firmware/gmu_gen70200.bin")
-                rootCmd("chmod 644 $MODULE_DIR/system/vendor/firmware/gmu_gen70200.bin")
+                RootShell.cmd("cp ${tmpDir}/gmu_gen70200.bin $MODULE_DIR/system/vendor/firmware/gmu_gen70200.bin")
+                RootShell.cmd("chmod 644 $MODULE_DIR/system/vendor/firmware/gmu_gen70200.bin")
 
                 // Permissions XML
                 onProgress("Setting up permissions...")
@@ -115,18 +116,18 @@ class ModuleInstaller(private val context: Context) {
                     "module/system/etc/permissions/privapp-permissions-thor-hotkeys.xml",
                     File(tmpDir, "privapp-permissions-thor-hotkeys.xml")
                 )
-                rootCmd("cp ${tmpDir}/privapp-permissions-thor-hotkeys.xml $MODULE_DIR/system/etc/permissions/")
-                rootCmd("chmod 644 $MODULE_DIR/system/etc/permissions/privapp-permissions-thor-hotkeys.xml")
+                RootShell.cmd("cp ${tmpDir}/privapp-permissions-thor-hotkeys.xml $MODULE_DIR/system/etc/permissions/")
+                RootShell.cmd("chmod 644 $MODULE_DIR/system/etc/permissions/privapp-permissions-thor-hotkeys.xml")
 
                 // module.prop
                 onProgress("Writing module metadata...")
                 extractAsset("module/module.prop", File(tmpDir, "module.prop"))
-                rootCmd("cp ${tmpDir}/module.prop $MODULE_DIR/module.prop")
+                RootShell.cmd("cp ${tmpDir}/module.prop $MODULE_DIR/module.prop")
 
                 // service.sh
                 extractAsset("module/service.sh", File(tmpDir, "service.sh"))
-                rootCmd("cp ${tmpDir}/service.sh $MODULE_DIR/service.sh")
-                rootCmd("chmod 755 $MODULE_DIR/service.sh")
+                RootShell.cmd("cp ${tmpDir}/service.sh $MODULE_DIR/service.sh")
+                RootShell.cmd("chmod 755 $MODULE_DIR/service.sh")
 
                 // Patch vendor_boot DTB for GPU overclock
                 onProgress("Patching vendor_boot DTB...")
@@ -136,32 +137,32 @@ class ModuleInstaller(private val context: Context) {
                 val vbPath = vbDir.absolutePath
 
                 // Dump current vendor_boot
-                rootCmdStrict("dd if=$VENDOR_BOOT_PART of=$vbPath/vendor_boot.img")
+                RootShell.cmdStrict("dd if=$VENDOR_BOOT_PART of=$vbPath/vendor_boot.img")
 
                 // Unpack with magiskboot to extract DTB
-                rootCmdStrict("cd $vbPath && $MAGISKBOOT unpack vendor_boot.img")
+                RootShell.cmdStrict("cd $vbPath && $MAGISKBOOT unpack vendor_boot.img")
 
                 // Copy DTB to app-writable location, patch, copy back
-                rootCmdStrict("cp $vbPath/dtb $vbPath/dtb_work")
-                rootCmdStrict("chmod 666 $vbPath/dtb_work")
+                RootShell.cmdStrict("cp $vbPath/dtb $vbPath/dtb_work")
+                RootShell.cmdStrict("chmod 666 $vbPath/dtb_work")
 
                 val dtbFile = File(vbPath, "dtb_work")
                 patchDtbGpuFreq(dtbFile)
 
-                rootCmdStrict("cp $vbPath/dtb_work $vbPath/dtb")
+                RootShell.cmdStrict("cp $vbPath/dtb_work $vbPath/dtb")
 
                 // Repack
-                rootCmdStrict("cd $vbPath && $MAGISKBOOT repack vendor_boot.img")
+                RootShell.cmdStrict("cd $vbPath && $MAGISKBOOT repack vendor_boot.img")
 
                 // Flash patched image back
                 onProgress("Flashing patched vendor_boot...")
-                rootCmdStrict("dd if=$vbPath/new-boot.img of=$VENDOR_BOOT_PART")
+                RootShell.cmdStrict("dd if=$vbPath/new-boot.img of=$VENDOR_BOOT_PART")
 
                 // Clean up vendor_boot work dir
                 vbDir.deleteRecursively()
 
                 // Set ownership
-                rootCmd("chown -R 0:0 $MODULE_DIR")
+                RootShell.cmd("chown -R 0:0 $MODULE_DIR")
 
                 // Clean up
                 tmpDir.deleteRecursively()
@@ -177,10 +178,10 @@ class ModuleInstaller(private val context: Context) {
     fun uninstall(onDone: (Boolean, String) -> Unit) {
         Thread {
             try {
-                rootCmd("rm -rf $MODULE_DIR")
+                RootShell.cmd("rm -rf $MODULE_DIR")
                 // Also purge any old modules
                 for (oldId in OLD_MODULE_IDS) {
-                    rootCmd("rm -rf /data/adb/modules/$oldId")
+                    RootShell.cmd("rm -rf /data/adb/modules/$oldId")
                 }
                 onDone(true, "Module removed. Reboot to complete.")
             } catch (e: Exception) {
@@ -190,14 +191,14 @@ class ModuleInstaller(private val context: Context) {
     }
 
     fun hasVendorBootBackup(): Boolean {
-        return rootCmdOutput("test -f $BACKUP_DIR/vendor_boot.img.bak && echo yes || echo no").trim() == "yes"
+        return RootShell.cmdOutput("test -f $BACKUP_DIR/vendor_boot.img.bak && echo yes || echo no").trim() == "yes"
     }
 
     fun restoreVendorBoot(onProgress: (String) -> Unit, onDone: (Boolean, String) -> Unit) {
         Thread {
             try {
                 onProgress("Restoring vendor_boot from backup...")
-                rootCmdStrict("dd if=$BACKUP_DIR/vendor_boot.img.bak of=$VENDOR_BOOT_PART")
+                RootShell.cmdStrict("dd if=$BACKUP_DIR/vendor_boot.img.bak of=$VENDOR_BOOT_PART")
                 onDone(true, "Vendor_boot restored. Reboot to apply.")
             } catch (e: Exception) {
                 Log.e(TAG, "Restore failed", e)
@@ -213,65 +214,41 @@ class ModuleInstaller(private val context: Context) {
      * Throws if not found or if multiple occurrences exist.
      */
     private fun patchDtbGpuFreq(dtbFile: File) {
-        val stockFreq = 680_000_000
-        val patchFreq = 692_000_000
-
-        // Big-endian 32-bit representations
-        val stockBytes = byteArrayOf(
-            (stockFreq shr 24).toByte(),
-            (stockFreq shr 16).toByte(),
-            (stockFreq shr 8).toByte(),
-            stockFreq.toByte()
-        )
-        val patchBytes = byteArrayOf(
-            (patchFreq shr 24).toByte(),
-            (patchFreq shr 16).toByte(),
-            (patchFreq shr 8).toByte(),
-            patchFreq.toByte()
-        )
+        val stockBytes = 680_000_000.toBigEndianBytes()
+        val patchBytes = 692_000_000.toBigEndianBytes()
 
         val data = dtbFile.readBytes()
-
-        // Find all occurrences of stock frequency
-        val offsets = mutableListOf<Int>()
-        for (i in 0..data.size - 4) {
-            if (data[i] == stockBytes[0] && data[i + 1] == stockBytes[1] &&
-                data[i + 2] == stockBytes[2] && data[i + 3] == stockBytes[3]) {
-                offsets.add(i)
-            }
-        }
-
-        // Check if already patched
-        var alreadyPatched = false
-        for (i in 0..data.size - 4) {
-            if (data[i] == patchBytes[0] && data[i + 1] == patchBytes[1] &&
-                data[i + 2] == patchBytes[2] && data[i + 3] == patchBytes[3]) {
-                alreadyPatched = true
-                break
-            }
-        }
-
-        if (offsets.isEmpty() && alreadyPatched) {
-            Log.i(TAG, "DTB already patched to 692 MHz, skipping")
-            return
-        }
+        val offsets = data.findAll(stockBytes)
 
         if (offsets.isEmpty()) {
+            if (data.findAll(patchBytes).isNotEmpty()) {
+                Log.i(TAG, "DTB already patched to 692 MHz, skipping")
+                return
+            }
             throw RuntimeException("GPU frequency 680 MHz not found in DTB — unexpected firmware")
         }
 
         Log.i(TAG, "Found ${offsets.size} occurrence(s) of 680 MHz in DTB at offsets: $offsets")
 
-        // Patch all occurrences (all pwrlevel@0 entries across DTB copies)
         for (offset in offsets) {
-            data[offset] = patchBytes[0]
-            data[offset + 1] = patchBytes[1]
-            data[offset + 2] = patchBytes[2]
-            data[offset + 3] = patchBytes[3]
+            patchBytes.copyInto(data, offset)
         }
 
         dtbFile.writeBytes(data)
         Log.i(TAG, "DTB patched: ${offsets.size} occurrence(s) of 680 MHz → 692 MHz")
+    }
+
+    private fun Int.toBigEndianBytes() = byteArrayOf(
+        (this shr 24).toByte(), (this shr 16).toByte(),
+        (this shr 8).toByte(), this.toByte()
+    )
+
+    private fun ByteArray.findAll(pattern: ByteArray): List<Int> {
+        val results = mutableListOf<Int>()
+        for (i in 0..size - pattern.size) {
+            if (pattern.indices.all { this[i + it] == pattern[it] }) results.add(i)
+        }
+        return results
     }
 
     private fun extractAsset(assetPath: String, dest: File) {
@@ -282,27 +259,4 @@ class ModuleInstaller(private val context: Context) {
         }
     }
 
-    private fun rootCmd(cmd: String) {
-        val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-        p.waitFor()
-        if (p.exitValue() != 0) {
-            val err = p.errorStream.bufferedReader().readText()
-            Log.w(TAG, "Command failed: $cmd → $err")
-        }
-    }
-
-    private fun rootCmdOutput(cmd: String): String {
-        val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-        p.waitFor()
-        return p.inputStream.bufferedReader().readText()
-    }
-
-    private fun rootCmdStrict(cmd: String) {
-        val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-        p.waitFor()
-        if (p.exitValue() != 0) {
-            val err = p.errorStream.bufferedReader().readText()
-            throw RuntimeException("Command failed: $cmd → $err")
-        }
-    }
 }

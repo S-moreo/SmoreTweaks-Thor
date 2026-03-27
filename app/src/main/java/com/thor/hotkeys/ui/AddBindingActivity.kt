@@ -18,6 +18,7 @@ import android.widget.Toast
 import com.thor.hotkeys.model.BindingStore
 import com.thor.hotkeys.model.HotkeyAction
 import com.thor.hotkeys.model.HotkeyBinding
+import com.thor.hotkeys.util.DeviceConfig
 import com.thor.hotkeys.util.KeyNames
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -87,10 +88,6 @@ class AddBindingActivity : Activity() {
         companion object {
             private const val TAG = "AddBinding"
             private const val SETTLE_MS = 800L
-            private val ALLOWED_DEVICES = setOf(
-                "/dev/input/event9",
-                "/dev/input/event0"
-            )
         }
 
         override fun onCreate(savedInstanceState: Bundle?) {
@@ -341,7 +338,7 @@ class AddBindingActivity : Activity() {
                         val parts = line.trim().split("\\s+".toRegex())
                         if (parts.size < 4) continue
                         val device = parts[0].trimEnd(':')
-                        if (device !in ALLOWED_DEVICES) continue
+                        if (device !in DeviceConfig.ALLOWED_DEVICES) continue
                         if (parts[1] != "EV_KEY") continue
 
                         val keyName = parts[2]
@@ -384,6 +381,10 @@ class AddBindingActivity : Activity() {
             try {
                 captureProcess?.destroy()
                 captureProcess?.destroyForcibly()
+            } catch (_: Exception) {}
+            // Kill orphan getevent processes left behind by su
+            try {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "pkill -f getevent")).waitFor()
             } catch (_: Exception) {}
             captureThread?.interrupt()
             captureProcess = null

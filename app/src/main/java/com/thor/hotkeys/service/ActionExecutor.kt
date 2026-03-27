@@ -5,6 +5,7 @@ import android.provider.Settings
 import android.util.Log
 import com.thor.hotkeys.model.HotkeyAction
 import com.thor.hotkeys.model.HotkeyBinding
+import com.thor.hotkeys.util.RootShell
 
 /**
  * Executes system actions via root shell commands.
@@ -52,7 +53,7 @@ class ActionExecutor(private val context: Context) {
             cmds.append("sendevent $device 1 $code 0; sendevent $device 0 0 0; ")
         }
         if (cmds.isNotEmpty()) {
-            rootCmd(cmds.toString())
+            RootShell.cmd(cmds.toString())
         }
     }
 
@@ -62,15 +63,15 @@ class ActionExecutor(private val context: Context) {
         when (binding.action) {
             HotkeyAction.OPEN_RECENTS -> {
                 releaseKeysFromFramework(binding.keys)
-                rootCmd("am start -n com.thor.hotkeys/.ui.TaskDrawerActivity")
+                RootShell.cmd("am start -n com.thor.hotkeys/.ui.TaskDrawerActivity")
             }
 
             HotkeyAction.GO_HOME -> {
-                rootCmd("input keyevent KEYCODE_HOME")
+                RootShell.cmd("input keyevent KEYCODE_HOME")
             }
 
             HotkeyAction.GO_BACK -> {
-                rootCmd("input keyevent KEYCODE_BACK")
+                RootShell.cmd("input keyevent KEYCODE_BACK")
             }
 
             HotkeyAction.SWITCH_SCREEN_FOCUS -> {
@@ -85,32 +86,32 @@ class ActionExecutor(private val context: Context) {
             }
 
             HotkeyAction.OPEN_NOTIFICATIONS -> {
-                rootCmd("cmd statusbar expand-notifications")
+                RootShell.cmd("cmd statusbar expand-notifications")
             }
 
             HotkeyAction.OPEN_QUICK_SETTINGS -> {
-                rootCmd("cmd statusbar expand-settings")
+                RootShell.cmd("cmd statusbar expand-settings")
             }
 
             HotkeyAction.TOGGLE_SPLIT_SCREEN -> {
                 // Long-press recents triggers split screen on Android 13
-                rootCmd("input keyevent --longpress KEYCODE_APP_SWITCH")
+                RootShell.cmd("input keyevent --longpress KEYCODE_APP_SWITCH")
             }
 
             HotkeyAction.SCREENSHOT -> {
-                rootCmd("input keyevent KEYCODE_SYSRQ")
+                RootShell.cmd("input keyevent KEYCODE_SYSRQ")
             }
 
             HotkeyAction.VOLUME_UP -> {
-                rootCmd("input keyevent KEYCODE_VOLUME_UP")
+                RootShell.cmd("input keyevent KEYCODE_VOLUME_UP")
             }
 
             HotkeyAction.VOLUME_DOWN -> {
-                rootCmd("input keyevent KEYCODE_VOLUME_DOWN")
+                RootShell.cmd("input keyevent KEYCODE_VOLUME_DOWN")
             }
 
             HotkeyAction.MEDIA_PLAY_PAUSE -> {
-                rootCmd("input keyevent KEYCODE_MEDIA_PLAY_PAUSE")
+                RootShell.cmd("input keyevent KEYCODE_MEDIA_PLAY_PAUSE")
             }
 
             HotkeyAction.BRIGHTNESS_UP -> {
@@ -128,14 +129,14 @@ class ActionExecutor(private val context: Context) {
             HotkeyAction.SHELL_COMMAND -> {
                 val cmd = binding.extra.trim()
                 if (cmd.isNotEmpty()) {
-                    rootCmd(cmd)
+                    RootShell.cmd(cmd)
                 }
             }
 
             HotkeyAction.SEND_KEYEVENT -> {
                 val keycode = binding.extra.trim()
                 if (keycode.isNotEmpty()) {
-                    rootCmd("input keyevent $keycode")
+                    RootShell.cmd("input keyevent $keycode")
                 }
             }
         }
@@ -144,7 +145,7 @@ class ActionExecutor(private val context: Context) {
     private fun launchApp(packageName: String) {
         try {
             // Try launching via monkey (works even without an exported activity)
-            rootCmd("monkey -p $packageName -c android.intent.category.LAUNCHER 1")
+            RootShell.cmd("monkey -p $packageName -c android.intent.category.LAUNCHER 1")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch $packageName", e)
         }
@@ -153,7 +154,7 @@ class ActionExecutor(private val context: Context) {
     private fun switchDisplayFocus() {
         // The Thor has two screens. Try wm commands to move focus.
         // This is device-specific and may need adjustment.
-        rootCmd("input keyevent --display 0 KEYCODE_WAKEUP")
+        RootShell.cmd("input keyevent --display 0 KEYCODE_WAKEUP")
     }
 
     private fun adjustBrightness(delta: Int) {
@@ -164,7 +165,7 @@ class ActionExecutor(private val context: Context) {
                 128
             )
             val newVal = (current + delta).coerceIn(1, 255)
-            rootCmd("settings put system screen_brightness $newVal")
+            RootShell.cmd("settings put system screen_brightness $newVal")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to adjust brightness", e)
         }
@@ -181,7 +182,7 @@ class ActionExecutor(private val context: Context) {
                     .find(output)
                 val pkg = match?.groupValues?.get(1)?.trim()
                 if (pkg != null && pkg != "com.android.launcher3" && pkg != "com.thor.hotkeys") {
-                    rootCmd("am force-stop $pkg")
+                    RootShell.cmd("am force-stop $pkg")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to kill foreground app", e)
@@ -189,17 +190,4 @@ class ActionExecutor(private val context: Context) {
         }.start()
     }
 
-    private fun rootCmd(cmd: String) {
-        try {
-            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-            process.waitFor()
-            val exitCode = process.exitValue()
-            if (exitCode != 0) {
-                val err = process.errorStream.bufferedReader().readText()
-                Log.w(TAG, "Command '$cmd' exited $exitCode: $err")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Root command failed: $cmd", e)
-        }
-    }
 }

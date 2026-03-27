@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.thor.hotkeys.R
+import com.thor.hotkeys.util.RootShell
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -276,13 +277,13 @@ class TaskDrawerActivity : AppCompatActivity() {
     private fun switchToTask(task: RecentTask) {
         finish()
         Thread {
-            rootCmd("monkey -p ${task.packageName} -c android.intent.category.LAUNCHER 1")
+            RootShell.cmd("monkey -p ${task.packageName} -c android.intent.category.LAUNCHER 1")
         }.start()
     }
 
     private fun dismissTask(task: RecentTask) {
         Thread {
-            rootCmd("am stack remove ${task.taskId}")
+            RootShell.cmd("am stack remove ${task.taskId}")
         }.start()
         val pos = tasks.indexOf(task)
         if (pos >= 0) {
@@ -306,7 +307,7 @@ class TaskDrawerActivity : AppCompatActivity() {
         finish()
         Thread {
             Thread.sleep(300) // wait for drawer to close
-            rootCmd("input keyevent KEYCODE_SYSRQ")
+            RootShell.cmd("input keyevent KEYCODE_SYSRQ")
         }.start()
     }
 
@@ -314,7 +315,7 @@ class TaskDrawerActivity : AppCompatActivity() {
         val taskIds = tasks.map { it.taskId }
         Thread {
             for (id in taskIds) {
-                rootCmd("am stack remove $id")
+                RootShell.cmd("am stack remove $id")
             }
         }.start()
         tasks.clear()
@@ -324,15 +325,6 @@ class TaskDrawerActivity : AppCompatActivity() {
         Toast.makeText(this, "All tasks cleared", Toast.LENGTH_SHORT).show()
         // Close after a beat
         rvTasks.postDelayed({ finish() }, 500)
-    }
-
-    private fun rootCmd(cmd: String) {
-        try {
-            val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-            p.waitFor()
-        } catch (e: Exception) {
-            Log.e(TAG, "cmd failed: $cmd", e)
-        }
     }
 
     // --- Adapter ---

@@ -16,6 +16,7 @@ import com.thor.hotkeys.model.HotkeyBinding
 import com.thor.hotkeys.service.HotkeyService
 import com.thor.hotkeys.service.ModuleInstaller
 import com.thor.hotkeys.util.KeyNames
+import com.thor.hotkeys.util.RootShell
 
 class SettingsActivity : Activity() {
 
@@ -86,6 +87,33 @@ class SettingsActivity : Activity() {
                     notifyService()
                     true
                 }
+            }
+
+            // System info overlay toggle — managed by the HotkeyService
+            (findPreference("overlay_enabled") as? SwitchPreference)?.apply {
+                setOnPreferenceChangeListener { _, _ ->
+                    notifyService()
+                    true
+                }
+            }
+
+            // Overlay update interval — writes to file that the overlay reads each tick
+            (findPreference("overlay_interval") as? ListPreference)?.apply {
+                summary = entry ?: "1000 ms (stock)"
+                setOnPreferenceChangeListener { pref, newValue ->
+                    val lp = pref as ListPreference
+                    val idx = lp.findIndexOfValue(newValue as String)
+                    pref.summary = if (idx >= 0) lp.entries[idx] else newValue
+                    Thread {
+                        RootShell.cmd("echo $newValue > /data/local/tmp/smore_overlay_interval")
+                    }.start()
+                    true
+                }
+                // Sync current value to file
+                val currentVal = value ?: "1000"
+                Thread {
+                    RootShell.cmd("echo $currentVal > /data/local/tmp/smore_overlay_interval")
+                }.start()
             }
 
             // Add binding button

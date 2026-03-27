@@ -36,6 +36,27 @@
 
     </PreferenceCategory>
 
+    <!-- System Info Overlay -->
+    <PreferenceCategory
+        android:key="category_overlay"
+        android:title="System Info Overlay">
+
+        <SwitchPreference
+            android:key="overlay_enabled"
+            android:title="Show System Info Overlay"
+            android:summary="CPU, GPU, temperature, FPS"
+            android:defaultValue="false" />
+
+        <ListPreference
+            android:key="overlay_interval"
+            android:title="Update Interval"
+            android:defaultValue="1000"
+            android:entries="@array/overlay_interval_entries"
+            android:entryValues="@array/overlay_interval_values"
+            android:dependency="overlay_enabled" />
+
+    </PreferenceCategory>
+
     <!-- Module -->
     <PreferenceCategory
         android:key="category_module"
