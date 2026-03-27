@@ -1,6 +1,6 @@
 # S'more Tweaks for AYN Thor
 
-A root-enabled system app for the AYN Thor handheld gaming device. Controller hotkey bindings, GPU overclock, custom task drawer, and more — all managed from a single self-installing module within Android Settings.
+A root system app for the AYN Thor. Controller hotkey bindings, GPU overclock, custom task drawer, and more — all managed from a single self-installing module within Android Settings.
 
 ---
 
