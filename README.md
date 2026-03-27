@@ -43,24 +43,26 @@ A root system app for the AYN Thor. Controller hotkey bindings, GPU overclock, c
 
 ### Steps
 
-1. Build the APK or grab a release
-2. Install via `adb install` or sideload
-3. Open **Settings** — "S'more Tweaks" appears on the main settings page
-4. Tap **Install / Update Module** and follow the prompts
-5. Reboot when prompted
+1. Build the module zip (or grab a release)
+2. Push to device: `adb push SmoreTweaks-module.zip /sdcard/`
+3. Flash via Magisk Manager or APatch
+4. Reboot
 
-After reboot, the app runs as a system priv-app with the GPU overclock active.
+That's it. After reboot the app is installed as a system priv-app, GPU overclock is active, and "S'more Tweaks" appears in Android Settings.
+
+The in-app **Install / Update Module** option can be used later to update the module without re-flashing.
 
 ---
 
 ## Building
 
 ```bash
-# Build the debug APK
-./gradlew assembleDebug
+# Build the flashable module zip (builds APK + packages everything)
+./build-module.sh
 
-# Install directly to a connected device
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+# Output: SmoreTweaks-module.zip
+# Flash via Magisk/APatch manager
+adb push SmoreTweaks-module.zip /sdcard/
 ```
 
 Requires Android SDK with API 34 and JDK 17.

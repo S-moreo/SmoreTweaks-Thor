@@ -15,4 +15,5 @@
 *.log
 *.zip
 /app/release
-/module/
+# Built APK gets copied into module/ at build time
+module/system/priv-app/ThorHotkeys/ThorHotkeys.apk

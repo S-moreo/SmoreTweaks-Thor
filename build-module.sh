@@ -8,14 +8,24 @@ echo "==> Building APK..."
 ./gradlew assembleDebug 2>&1 | tail -3
 APK="app/build/outputs/apk/debug/app-debug.apk"
 
+echo "==> Syncing module assets..."
+# Copy binary assets from the app's bundled module into the flashable module
+cp app/src/main/assets/module/system/bin/pservice          module/system/bin/pservice
+cp app/src/main/assets/module/system/vendor/firmware/*      module/system/vendor/firmware/
+cp app/src/main/assets/module/system/vendor/lib/modules/*   module/system/vendor/lib/modules/
+cp app/src/main/assets/module/system/etc/permissions/*      module/system/etc/permissions/
+
 echo "==> Packaging module..."
+mkdir -p module/system/priv-app/ThorHotkeys
 cp "$APK" module/system/priv-app/ThorHotkeys/ThorHotkeys.apk
 
 cd module
-rm -f ../ThorHotkeys-module.zip
-7z a -tzip ../ThorHotkeys-module.zip . -xr!'*.DS_Store' -xr!'*__MACOSX*'
+rm -f ../SmoreTweaks-module.zip
+zip -r ../SmoreTweaks-module.zip . \
+  -x '*.DS_Store' '*__MACOSX*' '*.gitkeep'
 
 cd ..
-echo "==> Built: ThorHotkeys-module.zip ($(du -h ThorHotkeys-module.zip | cut -f1))"
-echo "    Flash via Magisk/APatch manager or:"
-echo "    adb push ThorHotkeys-module.zip /sdcard/"
+echo "==> Built: SmoreTweaks-module.zip ($(du -h SmoreTweaks-module.zip | cut -f1))"
+echo ""
+echo "    Flash via Magisk/APatch manager:"
+echo "    adb push SmoreTweaks-module.zip /sdcard/"
