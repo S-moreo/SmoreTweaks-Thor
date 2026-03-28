@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- One Click Setup (stock to rooted + fully configured) -->
+    <PreferenceCategory
+        android:key="category_setup"
+        android:title="Setup">
+
+        <Preference
+            android:key="one_click_setup"
+            android:title="One Click Setup"
+            android:summary="Root device with APatch and install everything" />
+
+        <Preference
+            android:key="restore_boot"
+            android:title="Restore Stock Boot"
+            android:summary="Unroot by restoring original boot partition" />
+
+    </PreferenceCategory>
+
     <SwitchPreference
         android:key="service_enabled"
         android:title="@string/pref_service_title"

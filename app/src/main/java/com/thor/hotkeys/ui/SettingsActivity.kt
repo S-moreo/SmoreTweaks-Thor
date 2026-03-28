@@ -14,6 +14,7 @@ import android.widget.Toast
 import com.thor.hotkeys.R
 import com.thor.hotkeys.model.BindingStore
 import com.thor.hotkeys.model.HotkeyBinding
+import com.thor.hotkeys.service.AutoRootSetup
 import com.thor.hotkeys.service.HotkeyService
 import com.thor.hotkeys.service.ModuleInstaller
 import com.thor.hotkeys.util.KeyNames
@@ -148,6 +149,125 @@ class SettingsActivity : Activity() {
                         Toast.makeText(activity, "Invalid density (100-600)", Toast.LENGTH_SHORT).show()
                         false
                     }
+                }
+            }
+
+            // One Click Setup
+            val autoRoot = AutoRootSetup(activity)
+
+            findPreference("one_click_setup")?.setOnPreferenceClickListener {
+                Thread {
+                    val rooted = autoRoot.isRooted()
+                    val hasPServer = com.thor.hotkeys.util.PServerBinder.isAvailable
+                    activity.runOnUiThread {
+                        when {
+                            rooted -> AlertDialog.Builder(activity)
+                                .setTitle("Already Rooted")
+                                .setMessage("Device already has root.\nUse \"Install / Update Module\" instead.")
+                                .setPositiveButton("OK", null)
+                                .show()
+                            !hasPServer -> AlertDialog.Builder(activity)
+                                .setTitle("Not Supported")
+                                .setMessage("PServerBinder not found. This feature requires stock AYN firmware.")
+                                .setPositiveButton("OK", null)
+                                .show()
+                            else -> {
+                                AlertDialog.Builder(activity)
+                                    .setTitle("One Click Setup")
+                                    .setMessage("This will:\n\n" +
+                                        "  1. Root with APatch\n" +
+                                        "  2. Install APatch Manager\n" +
+                                        "  3. Patch GPU clock (680 -> 692 MHz)\n" +
+                                        "  4. Install S'more Tweaks module\n\n" +
+                                        "Boot partitions are backed up automatically.\n" +
+                                        "One reboot required.")
+                                    .setPositiveButton("Install") { _, _ ->
+                                        val pref = findPreference("one_click_setup")
+                                        autoRoot.install(
+                                            onProgress = { msg ->
+                                                activity.runOnUiThread { pref?.summary = msg }
+                                            },
+                                            onDone = { ok, msg ->
+                                                activity.runOnUiThread {
+                                                    pref?.summary = msg
+                                                    if (ok) {
+                                                        AlertDialog.Builder(activity)
+                                                            .setTitle("Reboot now?")
+                                                            .setMessage("Setup complete. Reboot to activate everything.")
+                                                            .setPositiveButton("Reboot") { _, _ ->
+                                                                com.thor.hotkeys.util.PServerBinder.exec("reboot")
+                                                            }
+                                                            .setNegativeButton("Later", null)
+                                                            .show()
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                    .setNegativeButton("Cancel", null)
+                                    .show()
+                            }
+                        }
+                    }
+                }.start()
+                true
+            }
+
+            findPreference("restore_boot")?.apply {
+                isEnabled = false
+                summary = "Checking..."
+                Thread {
+                    // Check via PServerBinder (stock) or su (rooted)
+                    val hasBackup = try {
+                        val check = com.thor.hotkeys.util.PServerBinder.exec(
+                            "test -f /data/adb/smore-tweaks-backup/boot.img.bak && echo y"
+                        )
+                        check?.trim() == "y"
+                    } catch (_: Exception) {
+                        RootShell.cmdOutput(
+                            "test -f /data/adb/smore-tweaks-backup/boot.img.bak && echo y"
+                        ).trim() == "y"
+                    }
+                    activity.runOnUiThread {
+                        isEnabled = hasBackup
+                        summary = if (hasBackup) "Unroot by restoring original boot partition"
+                            else "No boot backup available"
+                    }
+                }.start()
+                setOnPreferenceClickListener {
+                    AlertDialog.Builder(activity)
+                        .setTitle("Restore Stock Boot?")
+                        .setMessage("This will remove APatch root and restore the original boot partition.\n\nA reboot is required.")
+                        .setPositiveButton("Restore") { _, _ ->
+                            summary = "Restoring..."
+                            Thread {
+                                try {
+                                    val slot = RootShell.cmdOutput("getprop ro.boot.slot_suffix").trim()
+                                    RootShell.cmdStrict(
+                                        "dd if=/data/adb/smore-tweaks-backup/boot.img.bak " +
+                                        "of=/dev/block/by-name/boot$slot"
+                                    )
+                                    activity.runOnUiThread {
+                                        summary = "Boot restored. Reboot to complete."
+                                        AlertDialog.Builder(activity)
+                                            .setTitle("Reboot now?")
+                                            .setMessage("Stock boot restored. Reboot to remove root.")
+                                            .setPositiveButton("Reboot") { _, _ ->
+                                                Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
+                                            }
+                                            .setNegativeButton("Later", null)
+                                            .show()
+                                    }
+                                } catch (e: Exception) {
+                                    activity.runOnUiThread {
+                                        summary = "Restore failed: ${e.message}"
+                                    }
+                                }
+                            }.start()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    true
                 }
             }
 
