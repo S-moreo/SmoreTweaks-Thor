@@ -7,6 +7,7 @@ import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
@@ -61,11 +62,19 @@ class SystemInfoOverlay(private val context: Context) {
 
         windowManager = displayContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
+        // Use physical DPI so text stays the same physical size
+        // regardless of display density override
+        val dm = displayContext.resources.displayMetrics
+        val physicalDpi = DisplayMetrics.DENSITY_DEVICE_STABLE / 160f
+        val scale = physicalDpi / dm.density
+
         val tv = TextView(displayContext).apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, 10f * scale * dm.density)
             setTextColor(Color.WHITE)
             setBackgroundColor(0x88000000.toInt())
-            setPadding(12, 2, 12, 2)
+            val hPad = (12 * scale * dm.density).toInt()
+            val vPad = (2 * scale * dm.density).toInt()
+            setPadding(hPad, vPad, hPad, vPad)
             typeface = android.graphics.Typeface.MONOSPACE
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END

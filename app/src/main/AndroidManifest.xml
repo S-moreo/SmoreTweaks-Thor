@@ -13,6 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ThorHotkeys">
 
+
         <!-- Injected into System Settings -->
         <activity
             android:name=".ui.SettingsActivity"

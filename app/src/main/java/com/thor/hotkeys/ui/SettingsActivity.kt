@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.preference.EditTextPreference
 import android.preference.ListPreference
 import android.preference.Preference
 import android.preference.PreferenceCategory
@@ -114,6 +115,40 @@ class SettingsActivity : Activity() {
                 Thread {
                     RootShell.cmd("echo $currentVal > /data/local/tmp/smore_overlay_interval")
                 }.start()
+            }
+
+            // Smallest width (display density)
+            (findPreference("smallest_width") as? EditTextPreference)?.apply {
+                // Read current override
+                Thread {
+                    val current = RootShell.cmdOutput("wm density").trim()
+                    val override = Regex("Override density: (\\d+)").find(current)?.groupValues?.get(1)
+                    activity.runOnUiThread {
+                        if (override != null) {
+                            text = override
+                            summary = "Current: ${override} dpi (persists across reboots)"
+                        } else {
+                            val physical = Regex("Physical density: (\\d+)").find(current)?.groupValues?.get(1)
+                            summary = "No override set (physical: ${physical ?: "?"} dpi)"
+                        }
+                    }
+                }.start()
+                setOnPreferenceChangeListener { _, newValue ->
+                    val density = (newValue as? String)?.trim()?.toIntOrNull()
+                    if (density != null && density in 100..600) {
+                        Thread {
+                            RootShell.cmd("wm density $density")
+                            RootShell.cmd("echo $density > /data/local/tmp/smore_display_density")
+                            activity.runOnUiThread {
+                                summary = "Current: $density dpi (persists across reboots)"
+                            }
+                        }.start()
+                        true
+                    } else {
+                        Toast.makeText(activity, "Invalid density (100-600)", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
             }
 
             // Add binding button

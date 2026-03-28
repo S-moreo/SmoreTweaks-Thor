@@ -57,6 +57,19 @@
 
     </PreferenceCategory>
 
+    <!-- Display -->
+    <PreferenceCategory
+        android:key="category_display"
+        android:title="Display">
+
+        <EditTextPreference
+            android:key="smallest_width"
+            android:title="Smallest Width (dp)"
+            android:summary="Persists across reboots (default: 369)"
+            android:defaultValue="" />
+
+    </PreferenceCategory>
+
     <!-- Module -->
     <PreferenceCategory
         android:key="category_module"

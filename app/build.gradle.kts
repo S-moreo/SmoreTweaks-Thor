@@ -40,4 +40,5 @@ dependencies {
     implementation("com.google.android.material:material:1.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+
 }

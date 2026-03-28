@@ -11,6 +11,12 @@ done
 # Give the system a moment to settle
 sleep 5
 
+# Persist smallest width (display density)
+DENSITY_FILE="/data/local/tmp/smore_display_density"
+if [ -f "$DENSITY_FILE" ]; then
+  wm density "$(cat $DENSITY_FILE)" 2>/dev/null
+fi
+
 # Start the service if the user has it enabled
 # (The BootReceiver in the app handles this normally,
 #  this is just a safety net)

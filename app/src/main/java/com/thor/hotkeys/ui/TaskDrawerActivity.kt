@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -343,6 +344,13 @@ class TaskDrawerActivity : AppCompatActivity() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_task_card, parent, false)
+            // Use physical DPI to size cards so they stay the same physical
+            // size regardless of display density override
+            val dm = parent.resources.displayMetrics
+            val physicalDpi = DisplayMetrics.DENSITY_DEVICE_STABLE / 160f
+            val scale = physicalDpi / dm.density
+            val cardWidthPx = (160 * scale * dm.density).toInt()
+            view.layoutParams.width = cardWidthPx
             return VH(view)
         }
 
