@@ -1,4 +1,4 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.content.Context
 import android.graphics.Color
@@ -13,7 +13,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.TextView
-import com.thor.hotkeys.util.RootShell
+import net.smoreo.thortweaks.util.RootShell
 import java.io.File
 
 class SystemInfoOverlay(private val context: Context) {

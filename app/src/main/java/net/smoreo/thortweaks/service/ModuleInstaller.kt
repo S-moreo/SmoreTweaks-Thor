@@ -1,8 +1,8 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.content.Context
 import android.util.Log
-import com.thor.hotkeys.util.RootShell
+import net.smoreo.thortweaks.util.RootShell
 import java.io.File
 import java.io.FileOutputStream
 
@@ -178,16 +178,19 @@ class ModuleInstaller(private val context: Context) {
     fun uninstall(onDone: (Boolean, String) -> Unit) {
         Thread {
             try {
-                RootShell.cmd("rm -rf $MODULE_DIR")
-                // Also purge any old modules
-                for (oldId in OLD_MODULE_IDS) {
-                    RootShell.cmd("rm -rf /data/adb/modules/$oldId")
-                }
+                uninstallSync()
                 onDone(true, "Module removed. Reboot to complete.")
             } catch (e: Exception) {
                 onDone(false, "Uninstall failed: ${e.message}")
             }
         }.start()
+    }
+
+    fun uninstallSync() {
+        RootShell.cmd("rm -rf $MODULE_DIR")
+        for (oldId in OLD_MODULE_IDS) {
+            RootShell.cmd("rm -rf /data/adb/modules/$oldId")
+        }
     }
 
     fun hasVendorBootBackup(): Boolean {
@@ -198,13 +201,17 @@ class ModuleInstaller(private val context: Context) {
         Thread {
             try {
                 onProgress("Restoring vendor_boot from backup...")
-                RootShell.cmdStrict("dd if=$BACKUP_DIR/vendor_boot.img.bak of=$VENDOR_BOOT_PART")
+                restoreVendorBootSync()
                 onDone(true, "Vendor_boot restored. Reboot to apply.")
             } catch (e: Exception) {
                 Log.e(TAG, "Restore failed", e)
                 onDone(false, "Restore failed: ${e.message}")
             }
         }.start()
+    }
+
+    fun restoreVendorBootSync() {
+        RootShell.cmdStrict("dd if=$BACKUP_DIR/vendor_boot.img.bak of=$VENDOR_BOOT_PART")
     }
 
     /**

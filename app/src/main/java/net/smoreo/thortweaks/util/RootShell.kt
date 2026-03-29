@@ -1,4 +1,4 @@
-package com.thor.hotkeys.util
+package net.smoreo.thortweaks.util
 
 import android.util.Log
 
@@ -19,11 +19,16 @@ object RootShell {
         }
     }
 
-    /** Run root command and return stdout. */
+    /** Run root command and return stdout. Returns empty string if su is unavailable. */
     fun cmdOutput(cmd: String): String {
-        val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-        p.waitFor()
-        return p.inputStream.bufferedReader().readText()
+        return try {
+            val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
+            p.waitFor()
+            p.inputStream.bufferedReader().readText()
+        } catch (e: Exception) {
+            Log.e(TAG, "Root command failed: $cmd", e)
+            ""
+        }
     }
 
     /** Run root command, throw on non-zero exit. Drains stderr to avoid pipe deadlocks. */

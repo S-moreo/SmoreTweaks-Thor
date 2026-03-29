@@ -1,4 +1,4 @@
-package com.thor.hotkeys.ui
+package net.smoreo.thortweaks.ui
 
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
@@ -18,8 +18,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.thor.hotkeys.R
-import com.thor.hotkeys.util.RootShell
+import net.smoreo.thortweaks.R
+import net.smoreo.thortweaks.util.RootShell
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -251,7 +251,7 @@ class TaskDrawerActivity : AppCompatActivity() {
 
                 // Skip home, recents, and our own app
                 if (type == "home" || type == "recents") continue
-                if (pkg == "com.thor.hotkeys") continue
+                if (pkg == "net.smoreo.thortweaks") continue
                 if (pkg == "com.android.settings.FallbackHome") continue
 
                 // Get app info

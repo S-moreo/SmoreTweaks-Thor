@@ -1,4 +1,4 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,9 +9,9 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.preference.PreferenceManager
-import com.thor.hotkeys.R
-import com.thor.hotkeys.model.BindingStore
-import com.thor.hotkeys.ui.SettingsActivity
+import net.smoreo.thortweaks.R
+import net.smoreo.thortweaks.model.BindingStore
+import net.smoreo.thortweaks.ui.SettingsActivity
 
 class HotkeyService : Service() {
 
@@ -20,9 +20,9 @@ class HotkeyService : Service() {
         private const val CHANNEL_ID = "smore_tweaks_channel"
         private const val NOTIFICATION_ID = 1
 
-        const val ACTION_START = "com.thor.hotkeys.START"
-        const val ACTION_STOP = "com.thor.hotkeys.STOP"
-        const val ACTION_RELOAD = "com.thor.hotkeys.RELOAD"
+        const val ACTION_START = "net.smoreo.thortweaks.START"
+        const val ACTION_STOP = "net.smoreo.thortweaks.STOP"
+        const val ACTION_RELOAD = "net.smoreo.thortweaks.RELOAD"
 
         @Volatile
         var isRunning = false

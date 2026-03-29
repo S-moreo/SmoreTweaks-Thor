@@ -1,4 +1,4 @@
-package com.thor.hotkeys.model
+package net.smoreo.thortweaks.model
 
 data class HotkeyBinding(
     val id: String = java.util.UUID.randomUUID().toString(),

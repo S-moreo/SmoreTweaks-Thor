@@ -1,4 +1,4 @@
-package com.thor.hotkeys.util
+package net.smoreo.thortweaks.util
 
 import android.os.IBinder
 import android.os.Parcel

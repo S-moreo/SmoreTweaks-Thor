@@ -1,11 +1,11 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.content.Context
 import android.provider.Settings
 import android.util.Log
-import com.thor.hotkeys.model.HotkeyAction
-import com.thor.hotkeys.model.HotkeyBinding
-import com.thor.hotkeys.util.RootShell
+import net.smoreo.thortweaks.model.HotkeyAction
+import net.smoreo.thortweaks.model.HotkeyBinding
+import net.smoreo.thortweaks.util.RootShell
 
 /**
  * Executes system actions via root shell commands.
@@ -63,7 +63,7 @@ class ActionExecutor(private val context: Context) {
         when (binding.action) {
             HotkeyAction.OPEN_RECENTS -> {
                 releaseKeysFromFramework(binding.keys)
-                RootShell.cmd("am start -n com.thor.hotkeys/.ui.TaskDrawerActivity")
+                RootShell.cmd("am start -n net.smoreo.thortweaks/.ui.TaskDrawerActivity")
             }
 
             HotkeyAction.GO_HOME -> {
@@ -181,7 +181,7 @@ class ActionExecutor(private val context: Context) {
                 val match = Regex("""Recent #0: Task\{[^ ]+ #\d+ type=\w+ (?:A=\d+:)?([^}]+)\}""")
                     .find(output)
                 val pkg = match?.groupValues?.get(1)?.trim()
-                if (pkg != null && pkg != "com.android.launcher3" && pkg != "com.thor.hotkeys") {
+                if (pkg != null && pkg != "com.android.launcher3" && pkg != "net.smoreo.thortweaks") {
                     RootShell.cmd("am force-stop $pkg")
                 }
             } catch (e: Exception) {

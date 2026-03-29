@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace = "com.thor.hotkeys"
+    namespace = "net.smoreo.thortweaks"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.thor.hotkeys"
+        applicationId = "net.smoreo.thortweaks"
         minSdk = 33
         targetSdk = 34
         versionCode = 2
-        versionName = "1.1"
+        versionName = "0.2"
     }
 
     buildTypes {

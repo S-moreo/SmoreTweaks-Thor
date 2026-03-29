@@ -1,7 +1,7 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.util.Log
-import com.thor.hotkeys.util.DeviceConfig
+import net.smoreo.thortweaks.util.DeviceConfig
 import java.io.BufferedReader
 import java.io.InputStreamReader
 

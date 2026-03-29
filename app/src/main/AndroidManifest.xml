@@ -27,6 +27,7 @@
                 <action android:name="com.android.settings.action.EXTRA_SETTINGS" />
             </intent-filter>
 
+
             <meta-data
                 android:name="com.android.settings.category"
                 android:value="com.android.settings.category.ia.homepage" />
@@ -63,6 +64,19 @@
             android:name=".service.HotkeyService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
+
+        <!-- Launcher alias — visible pre-root, hidden once installed as system app -->
+        <activity-alias
+            android:name=".LauncherAlias"
+            android:targetActivity=".ui.SettingsActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:icon="@drawable/ic_launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <receiver
             android:name=".service.BootReceiver"

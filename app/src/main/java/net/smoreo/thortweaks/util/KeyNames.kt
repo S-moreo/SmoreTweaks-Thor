@@ -1,4 +1,4 @@
-package com.thor.hotkeys.util
+package net.smoreo.thortweaks.util
 
 object KeyNames {
     fun friendly(key: String): String = when (key) {

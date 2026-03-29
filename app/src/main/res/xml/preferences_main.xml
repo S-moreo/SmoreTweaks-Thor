@@ -87,26 +87,5 @@
 
     </PreferenceCategory>
 
-    <!-- Module -->
-    <PreferenceCategory
-        android:key="category_module"
-        android:title="System Module">
-
-        <Preference
-            android:key="install_module"
-            android:title="Install / Update Module"
-            android:summary="Install as system app with GPU overclock" />
-
-        <Preference
-            android:key="uninstall_module"
-            android:title="Uninstall Module"
-            android:summary="Remove module (requires reboot)" />
-
-        <Preference
-            android:key="restore_vendor_boot"
-            android:title="Restore Stock vendor_boot"
-            android:summary="Restore from backup (reverses GPU OC DTB patch)" />
-
-    </PreferenceCategory>
 
 </PreferenceScreen>

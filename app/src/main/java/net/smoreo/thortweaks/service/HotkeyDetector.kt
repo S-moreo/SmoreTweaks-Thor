@@ -1,9 +1,9 @@
-package com.thor.hotkeys.service
+package net.smoreo.thortweaks.service
 
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.thor.hotkeys.model.HotkeyBinding
+import net.smoreo.thortweaks.model.HotkeyBinding
 
 /**
  * Detects hotkey combos and long-presses from raw key events.

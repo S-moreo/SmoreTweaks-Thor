@@ -1,4 +1,4 @@
-package com.thor.hotkeys.ui
+package net.smoreo.thortweaks.ui
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -11,14 +11,14 @@ import android.preference.PreferenceCategory
 import android.preference.PreferenceFragment
 import android.preference.SwitchPreference
 import android.widget.Toast
-import com.thor.hotkeys.R
-import com.thor.hotkeys.model.BindingStore
-import com.thor.hotkeys.model.HotkeyBinding
-import com.thor.hotkeys.service.AutoRootSetup
-import com.thor.hotkeys.service.HotkeyService
-import com.thor.hotkeys.service.ModuleInstaller
-import com.thor.hotkeys.util.KeyNames
-import com.thor.hotkeys.util.RootShell
+import net.smoreo.thortweaks.R
+import net.smoreo.thortweaks.model.BindingStore
+import net.smoreo.thortweaks.model.HotkeyBinding
+import net.smoreo.thortweaks.service.AutoRootSetup
+import net.smoreo.thortweaks.service.HotkeyService
+import net.smoreo.thortweaks.service.ModuleInstaller
+import net.smoreo.thortweaks.util.KeyNames
+import net.smoreo.thortweaks.util.RootShell
 
 class SettingsActivity : Activity() {
 
@@ -30,26 +30,6 @@ class SettingsActivity : Activity() {
                 .replace(android.R.id.content, HotkeyPreferenceFragment())
                 .commit()
         }
-        checkRoot()
-    }
-
-    private fun checkRoot() {
-        Thread {
-            try {
-                val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "id"))
-                p.waitFor()
-                val output = p.inputStream.bufferedReader().readText()
-                if (!output.contains("uid=0")) {
-                    runOnUiThread {
-                        Toast.makeText(this, getString(R.string.no_root), Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, "Root unavailable: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }.start()
     }
 
     class HotkeyPreferenceFragment : PreferenceFragment() {
@@ -58,9 +38,15 @@ class SettingsActivity : Activity() {
             const val REQUEST_ADD_BINDING = 1001
         }
 
+        // Preference keys that should remain enabled even without root
+        private val rootExemptKeys = setOf("one_click_setup")
+
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.preferences_main)
+
+            val autoRoot = AutoRootSetup(activity)
+            val installer = ModuleInstaller(activity)
 
             // Service toggle
             (findPreference("service_enabled") as? SwitchPreference)?.apply {
@@ -152,74 +138,14 @@ class SettingsActivity : Activity() {
                 }
             }
 
-            // One Click Setup
-            val autoRoot = AutoRootSetup(activity)
-
-            findPreference("one_click_setup")?.setOnPreferenceClickListener {
-                Thread {
-                    val rooted = autoRoot.isRooted()
-                    val hasPServer = com.thor.hotkeys.util.PServerBinder.isAvailable
-                    activity.runOnUiThread {
-                        when {
-                            rooted -> AlertDialog.Builder(activity)
-                                .setTitle("Already Rooted")
-                                .setMessage("Device already has root.\nUse \"Install / Update Module\" instead.")
-                                .setPositiveButton("OK", null)
-                                .show()
-                            !hasPServer -> AlertDialog.Builder(activity)
-                                .setTitle("Not Supported")
-                                .setMessage("PServerBinder not found. This feature requires stock AYN firmware.")
-                                .setPositiveButton("OK", null)
-                                .show()
-                            else -> {
-                                AlertDialog.Builder(activity)
-                                    .setTitle("One Click Setup")
-                                    .setMessage("This will:\n\n" +
-                                        "  1. Root with APatch\n" +
-                                        "  2. Install APatch Manager\n" +
-                                        "  3. Patch GPU clock (680 -> 692 MHz)\n" +
-                                        "  4. Install S'more Tweaks module\n\n" +
-                                        "Boot partitions are backed up automatically.\n" +
-                                        "One reboot required.")
-                                    .setPositiveButton("Install") { _, _ ->
-                                        val pref = findPreference("one_click_setup")
-                                        autoRoot.install(
-                                            onProgress = { msg ->
-                                                activity.runOnUiThread { pref?.summary = msg }
-                                            },
-                                            onDone = { ok, msg ->
-                                                activity.runOnUiThread {
-                                                    pref?.summary = msg
-                                                    if (ok) {
-                                                        AlertDialog.Builder(activity)
-                                                            .setTitle("Reboot now?")
-                                                            .setMessage("Setup complete. Reboot to activate everything.")
-                                                            .setPositiveButton("Reboot") { _, _ ->
-                                                                com.thor.hotkeys.util.PServerBinder.exec("reboot")
-                                                            }
-                                                            .setNegativeButton("Later", null)
-                                                            .show()
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
-                                    .setNegativeButton("Cancel", null)
-                                    .show()
-                            }
-                        }
-                    }
-                }.start()
-                true
-            }
+            // One Click Setup — click handler set after root check below
 
             findPreference("restore_boot")?.apply {
                 isEnabled = false
                 summary = "Checking..."
                 Thread {
-                    // Check via PServerBinder (stock) or su (rooted)
                     val hasBackup = try {
-                        val check = com.thor.hotkeys.util.PServerBinder.exec(
+                        val check = net.smoreo.thortweaks.util.PServerBinder.exec(
                             "test -f /data/adb/smore-tweaks-backup/boot.img.bak && echo y"
                         )
                         check?.trim() == "y"
@@ -236,22 +162,44 @@ class SettingsActivity : Activity() {
                 }.start()
                 setOnPreferenceClickListener {
                     AlertDialog.Builder(activity)
-                        .setTitle("Restore Stock Boot?")
-                        .setMessage("This will remove APatch root and restore the original boot partition.\n\nA reboot is required.")
+                        .setTitle("Restore Everything?")
+                        .setMessage("This will:\n\n" +
+                            "\u2022 Uninstall S\u2019more Tweaks module\n" +
+                            "\u2022 Uninstall APatch Manager\n" +
+                            "\u2022 Restore stock vendor_boot (undo GPU OC)\n" +
+                            "\u2022 Restore stock boot (remove APatch root)\n\n" +
+                            "A reboot is required.")
                         .setPositiveButton("Restore") { _, _ ->
                             summary = "Restoring..."
                             Thread {
                                 try {
+                                    // 1. Uninstall module
+                                    activity.runOnUiThread { summary = "Removing module..." }
+                                    installer.uninstallSync()
+
+                                    // 2. Uninstall APatch Manager
+                                    activity.runOnUiThread { summary = "Uninstalling APatch..." }
+                                    RootShell.cmd("pm uninstall me.bmax.apatch")
+
+                                    // 3. Restore vendor_boot if backup exists
+                                    if (installer.hasVendorBootBackup()) {
+                                        activity.runOnUiThread { summary = "Restoring vendor_boot..." }
+                                        installer.restoreVendorBootSync()
+                                    }
+
+                                    // 4. Restore boot partition
+                                    activity.runOnUiThread { summary = "Restoring boot..." }
                                     val slot = RootShell.cmdOutput("getprop ro.boot.slot_suffix").trim()
                                     RootShell.cmdStrict(
                                         "dd if=/data/adb/smore-tweaks-backup/boot.img.bak " +
                                         "of=/dev/block/by-name/boot$slot"
                                     )
+
                                     activity.runOnUiThread {
-                                        summary = "Boot restored. Reboot to complete."
+                                        summary = "Everything restored. Reboot to complete."
                                         AlertDialog.Builder(activity)
                                             .setTitle("Reboot now?")
-                                            .setMessage("Stock boot restored. Reboot to remove root.")
+                                            .setMessage("Module removed, vendor_boot and boot restored.\nReboot to finish.")
                                             .setPositiveButton("Reboot") { _, _ ->
                                                 Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
                                             }
@@ -280,128 +228,132 @@ class SettingsActivity : Activity() {
                 true
             }
 
-            // Module install — load status off UI thread
-            val installer = ModuleInstaller(activity)
+            // Check root + module status in background, then configure UI
+            findPreference("one_click_setup")?.summary = "Checking..."
+            Thread {
+                val rooted = autoRoot.isRooted()
+                val status = if (rooted) installer.getStatus() else null
 
-            findPreference("install_module")?.apply {
-                summary = "Checking..."
-                setOnPreferenceClickListener {
-                    AlertDialog.Builder(activity)
-                        .setTitle("Install Module?")
-                        .setMessage("This will:\n\n• Remove old modules (thor-hotkeys, gpu_oc_692)\n• Install S'more Tweaks as system app\n• Install GPU overclock (pservice, kernel modules, firmware)\n• Patch vendor_boot DTB for GPU clock tables\n• Set up priv-app permissions\n\nA reboot is required to activate.")
-                        .setPositiveButton("Install") { _, _ ->
-                            summary = "Installing..."
-                            installer.install(
-                                onProgress = { msg -> activity.runOnUiThread { summary = msg } },
-                                onDone = { ok, msg ->
-                                    activity.runOnUiThread {
-                                        summary = msg
-                                        if (ok) {
-                                            AlertDialog.Builder(activity)
-                                                .setTitle("Reboot now?")
-                                                .setMessage("Module installed. Reboot to activate.")
-                                                .setPositiveButton("Reboot") { _, _ ->
-                                                    Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
-                                                }
-                                                .setNegativeButton("Later", null)
-                                                .show()
-                                        }
-                                    }
-                                }
-                            )
+                activity.runOnUiThread {
+                    // Disable/grey out all preferences except one_click_setup when not rooted
+                    if (!rooted) {
+                        setAllPreferencesEnabled(preferenceScreen, false)
+                    }
+
+                    // Update one_click_setup summary based on root + module state
+                    val setupPref = findPreference("one_click_setup")
+                    setupPref?.isEnabled = true
+                    setupPref?.summary = when {
+                        !rooted -> "Root device with APatch and install everything"
+                        status != null && status.installed -> {
+                            val upToDate = status.versionCode == ModuleInstaller.MODULE_VERSION_CODE
+                            if (upToDate) "Installed: ${status.version} (up to date)"
+                            else "Installed: ${status.version} \u2014 update available (${ModuleInstaller.MODULE_VERSION})"
                         }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                    true
-                }
-            }
+                        else -> "Rooted \u2014 tap to install module"
+                    }
 
-            findPreference("uninstall_module")?.apply {
-                isEnabled = false
-                setOnPreferenceClickListener {
-                    AlertDialog.Builder(activity)
-                        .setTitle("Uninstall Module?")
-                        .setMessage("This will remove the system module. A reboot is required.")
-                        .setPositiveButton("Uninstall") { _, _ ->
-                            installer.uninstall { ok, msg ->
-                                activity.runOnUiThread {
-                                    summary = msg
-                                    isEnabled = false
-                                    if (ok) {
-                                        AlertDialog.Builder(activity)
-                                            .setTitle("Reboot now?")
-                                            .setMessage("Module removed. Reboot to complete.")
-                                            .setPositiveButton("Reboot") { _, _ ->
-                                                Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
+                    // Set up click handler based on root state
+                    setupPref?.setOnPreferenceClickListener {
+                        if (rooted) {
+                            // Already rooted — install/update module
+                            AlertDialog.Builder(activity)
+                                .setTitle("Install Module?")
+                                .setMessage("This will:\n\n" +
+                                    "\u2022 Remove old modules (thor-hotkeys, gpu_oc_692)\n" +
+                                    "\u2022 Install S\u2019more Tweaks as system app\n" +
+                                    "\u2022 Install GPU overclock (pservice, kernel modules, firmware)\n" +
+                                    "\u2022 Patch vendor_boot DTB for GPU clock tables\n" +
+                                    "\u2022 Set up priv-app permissions\n\n" +
+                                    "A reboot is required to activate.")
+                                .setPositiveButton("Install") { _, _ ->
+                                    setupPref.summary = "Installing..."
+                                    installer.install(
+                                        onProgress = { msg ->
+                                            activity.runOnUiThread { setupPref.summary = msg }
+                                        },
+                                        onDone = { ok, msg ->
+                                            activity.runOnUiThread {
+                                                setupPref.summary = msg
+                                                if (ok) {
+                                                    AlertDialog.Builder(activity)
+                                                        .setTitle("Reboot now?")
+                                                        .setMessage("Module installed. Reboot to activate.")
+                                                        .setPositiveButton("Reboot") { _, _ ->
+                                                            Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
+                                                        }
+                                                        .setNegativeButton("Later", null)
+                                                        .show()
+                                                }
                                             }
-                                            .setNegativeButton("Later", null)
-                                            .show()
-                                    }
+                                        }
+                                    )
                                 }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        } else {
+                            // Not rooted — full setup flow
+                            val hasPServer = net.smoreo.thortweaks.util.PServerBinder.isAvailable
+                            if (!hasPServer) {
+                                AlertDialog.Builder(activity)
+                                    .setTitle("Not Supported")
+                                    .setMessage("PServerBinder not found. This feature requires stock AYN firmware.")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                            } else {
+                                AlertDialog.Builder(activity)
+                                    .setTitle("One Click Setup")
+                                    .setMessage("This will:\n\n" +
+                                        "  1. Root with APatch\n" +
+                                        "  2. Install APatch Manager\n" +
+                                        "  3. Patch GPU clock (680 -> 692 MHz)\n" +
+                                        "  4. Install S\u2019more Tweaks module\n\n" +
+                                        "All firmware partitions (boot, vendor_boot, init_boot, vbmeta, dtbo) are backed up automatically.\n" +
+                                        "One reboot required.")
+                                    .setPositiveButton("Install") { _, _ ->
+                                        autoRoot.install(
+                                            onProgress = { msg ->
+                                                activity.runOnUiThread { setupPref.summary = msg }
+                                            },
+                                            onDone = { ok, msg ->
+                                                activity.runOnUiThread {
+                                                    setupPref.summary = if (ok) "Setup complete — reboot required" else msg
+                                                    if (ok) {
+                                                        AlertDialog.Builder(activity)
+                                                            .setTitle("Reboot now?")
+                                                            .setMessage(msg)
+                                                            .setPositiveButton("Reboot") { _, _ ->
+                                                                net.smoreo.thortweaks.util.PServerBinder.exec("reboot")
+                                                            }
+                                                            .setNegativeButton("Later", null)
+                                                            .show()
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                    .setNegativeButton("Cancel", null)
+                                    .show()
                             }
                         }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                    true
-                }
-            }
-
-            findPreference("restore_vendor_boot")?.apply {
-                isEnabled = false
-                summary = "Checking..."
-                setOnPreferenceClickListener {
-                    AlertDialog.Builder(activity)
-                        .setTitle("Restore Stock vendor_boot?")
-                        .setMessage("This will flash the backed-up stock vendor_boot partition, reversing the GPU overclock DTB patch.\n\nA reboot is required.")
-                        .setPositiveButton("Restore") { _, _ ->
-                            summary = "Restoring..."
-                            installer.restoreVendorBoot(
-                                onProgress = { msg -> activity.runOnUiThread { summary = msg } },
-                                onDone = { ok, msg ->
-                                    activity.runOnUiThread {
-                                        summary = msg
-                                        if (ok) {
-                                            AlertDialog.Builder(activity)
-                                                .setTitle("Reboot now?")
-                                                .setMessage("Stock vendor_boot restored. Reboot to apply.")
-                                                .setPositiveButton("Reboot") { _, _ ->
-                                                    Thread { Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot")) }.start()
-                                                }
-                                                .setNegativeButton("Later", null)
-                                                .show()
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                    true
-                }
-            }
-
-            // Load module status off UI thread
-            Thread {
-                val status = installer.getStatus()
-                val hasBackup = installer.hasVendorBootBackup()
-                activity.runOnUiThread {
-                    findPreference("install_module")?.summary = if (status.installed) {
-                        val upToDate = status.versionCode == ModuleInstaller.MODULE_VERSION_CODE
-                        if (upToDate) "Installed: ${status.version} (up to date)"
-                        else "Installed: ${status.version} — update available (${ModuleInstaller.MODULE_VERSION})"
-                    } else {
-                        "Not installed — tap to install"
-                    }
-                    findPreference("uninstall_module")?.isEnabled = status.installed
-                    findPreference("restore_vendor_boot")?.apply {
-                        isEnabled = hasBackup
-                        summary = if (hasBackup) "Restore from backup (reverses GPU OC DTB patch)"
-                            else "No backup available"
+                        true
                     }
                 }
             }.start()
 
             refreshBindingList()
+        }
+
+        private fun setAllPreferencesEnabled(screen: android.preference.PreferenceGroup, enabled: Boolean) {
+            for (i in 0 until screen.preferenceCount) {
+                val pref = screen.getPreference(i)
+                if (pref.key in rootExemptKeys) continue
+                if (pref is android.preference.PreferenceGroup) {
+                    setAllPreferencesEnabled(pref, enabled)
+                } else {
+                    pref.isEnabled = enabled
+                }
+            }
         }
 
         override fun onResume() {

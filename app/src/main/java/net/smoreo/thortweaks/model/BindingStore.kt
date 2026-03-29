@@ -1,4 +1,4 @@
-package com.thor.hotkeys.model
+package net.smoreo.thortweaks.model
 
 import android.content.Context
 import com.google.gson.Gson

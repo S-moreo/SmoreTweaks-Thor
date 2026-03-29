@@ -1,4 +1,4 @@
-package com.thor.hotkeys.ui
+package net.smoreo.thortweaks.ui
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -15,11 +15,11 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.MenuItem
 import android.widget.Toast
-import com.thor.hotkeys.model.BindingStore
-import com.thor.hotkeys.model.HotkeyAction
-import com.thor.hotkeys.model.HotkeyBinding
-import com.thor.hotkeys.util.DeviceConfig
-import com.thor.hotkeys.util.KeyNames
+import net.smoreo.thortweaks.model.BindingStore
+import net.smoreo.thortweaks.model.HotkeyAction
+import net.smoreo.thortweaks.model.HotkeyBinding
+import net.smoreo.thortweaks.util.DeviceConfig
+import net.smoreo.thortweaks.util.KeyNames
 import java.io.BufferedReader
 import java.io.InputStreamReader
 

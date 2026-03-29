@@ -1,4 +1,4 @@
-package com.thor.hotkeys.util
+package net.smoreo.thortweaks.util
 
 object DeviceConfig {
     val ALLOWED_DEVICES = setOf(
